@@ -14,4 +14,4 @@
 
 handleGHRelease: true
 manifest: true
-primaryBranch: cfry/release-please
+primaryBranch: release
