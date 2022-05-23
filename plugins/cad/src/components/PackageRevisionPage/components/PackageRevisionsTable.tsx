@@ -47,7 +47,7 @@ type PackageRevisionRow = {
 const useStyles = makeStyles({
   iconButton: {
     position: 'absolute',
-    transform: 'translateY(-50%)',
+    transform: 'translateY(-48%)',
   },
 });
 
