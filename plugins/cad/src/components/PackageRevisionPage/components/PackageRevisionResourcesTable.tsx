@@ -176,7 +176,7 @@ export const PackageRevisionResourcesTable = ({
   };
 
   const columns: TableColumn<ResourceRow>[] = [
-    { title: 'Kind', field: 'kind' },
+    { title: 'Kind2', field: 'kind' },
     { title: 'Name', field: 'name' },
     { title: 'Namespace', field: 'namespace' },
     { title: '', render: resourceRow => <div>{rowOptions(resourceRow)}</div> },
