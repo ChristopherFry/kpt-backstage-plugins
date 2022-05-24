@@ -1,4 +1,4 @@
 {
-  "plugins/cad": "0.0.0-alpha",
+  "plugins/cad": "v0.0.0",
   "plugins/cad-backend": "0.0.0"
 }
