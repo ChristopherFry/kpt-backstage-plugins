@@ -1,6 +1,6 @@
 ---
 name: 'Bug Report'
-åabout: 'Report an issue'
+about: 'Report an issue'
 labels: bug
 ---
 
