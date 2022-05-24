@@ -1,6 +1,6 @@
 {
   "name": "kpt-backstage-plugins",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "engines": {
     "node": "14 || 16"
