@@ -1,5 +1,5 @@
 {
-  "name": "@internal/backstage-plugin-cad-backend",
+  "name": "@internal/cfry-backstage-plugin-cad-backend",
   "version": "0.0.0",
   "main": "src/index.ts",
   "types": "src/index.ts",
