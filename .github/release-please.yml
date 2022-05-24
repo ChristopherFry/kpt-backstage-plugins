@@ -14,4 +14,3 @@
 
 handleGHRelease: true
 manifest: true
-pullRequestTitlePattern: "release: new release"
