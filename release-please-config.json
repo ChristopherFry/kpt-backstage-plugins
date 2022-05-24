@@ -1,11 +1,7 @@
 {
   "bootstrap-sha": "8a20f8a036278c05fcafb53e5d7a3f60425affe7",
   "packages": {
-    "plugins/cad": {
-      "release-type": "node"
-    },
-    "plugins/cad-backend": {
-      "release-type": "node"
-    }
+    "plugins/cad": {},
+    "plugins/cad-backend": {}
   }
 }
