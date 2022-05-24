@@ -35,6 +35,6 @@ labels: bug
 <!--- Include as many relevant details about the environment you experienced the bug in -->
 
 - Browser Information: <!--- For example Google Chrome 97.0.4692.99 -->
-- Backstage Installation Version (in `backstage.json`): <!--- For example 1.1.1 -->
+- Backstage Installation Version (in `backstage.json`): <!--- For example 1.3.0 -->
 - `@kpt/backstage-plugin-cad` version: <!--- For example 0.1.0 -->
 - `@kpt/backstage-plugin-cad-backend` version: <!--- For example 0.1.0 -->
