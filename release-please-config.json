@@ -1,6 +1,4 @@
 {
-  "bump-minor-pre-major": true,
-  "group-pull-request-title-pattern": "release: new release",
   "packages": {
     "plugins/cad": {},
     "plugins/cad-backend": {}
