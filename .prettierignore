@@ -2,3 +2,5 @@ dist
 dist-types
 coverage
 .vscode
+plugins/cad-backend/CHANGELOG.md
+plugins/cad/CHANGELOG.md
