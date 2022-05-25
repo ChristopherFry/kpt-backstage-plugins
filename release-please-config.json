@@ -1,5 +1,5 @@
 {
-  "group-pull-request-title-pattern": "release${scope}: release${component} ${version}",
+  "group-pull-request-title-pattern": "release: release ${branch}",
   "packages": {
     "plugins/cad": {},
     "plugins/cad-backend": {}
