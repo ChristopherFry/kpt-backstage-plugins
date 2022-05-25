@@ -57,7 +57,7 @@ export const AdvancedRepositoryOptions = () => {
         <DialogTitle>Unregister repository</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to unregister this repository?5
+            Are you sure you want to unregister this repository?56
           </DialogContentText>
         </DialogContent>
         <DialogActions>
