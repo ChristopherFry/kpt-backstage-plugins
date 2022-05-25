@@ -66,7 +66,6 @@ type FindSync = (thisPackage: PackageRevision) => RootSync | undefined;
 
 const useStyles = makeStyles({
   iconButton: {
-    position: 'absolute',
     transform: 'translateY(-50%)',
   },
 });
