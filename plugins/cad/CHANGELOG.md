@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/ChristopherFry/kpt-backstage-plugins/compare/cfry-backstage-plugin-cad-v0.2.0...cfry-backstage-plugin-cad-v0.3.0) (2022-05-25)
+
+
+### Features
+
+* ui 6 ([a3077f4](https://github.com/ChristopherFry/kpt-backstage-plugins/commit/a3077f4c290cc80c7bdace60188f93903ea94487))
+
 ## [0.2.0](https://github.com/ChristopherFry/kpt-backstage-plugins/compare/cfry-backstage-plugin-cad-v0.1.0...cfry-backstage-plugin-cad-v0.2.0) (2022-05-25)
 
 
