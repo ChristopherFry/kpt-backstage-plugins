@@ -5,7 +5,7 @@
 
 ### Features
 
-* another update ui ([428d44a](https://github.com/ChristopherFry/kpt-backstage-plugins/commit/428d44ac3e5f959f33647b6fbd902f611bcb1baa))
+* yet another update ui ([428d44a](https://github.com/ChristopherFry/kpt-backstage-plugins/commit/428d44ac3e5f959f33647b6fbd902f611bcb1baa))
 
 ## [0.4.0](https://github.com/ChristopherFry/kpt-backstage-plugins/compare/cfry-backstage-plugin-cad-v0.3.0...cfry-backstage-plugin-cad-v0.4.0) (2022-05-25)
 
