@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/ChristopherFry/kpt-backstage-plugins/compare/backstage-plugin-cad-v0.1.0...backstage-plugin-cad-v0.2.0) (2022-05-25)
+
+
+### Features
+
+* ui update ([5d2029c](https://github.com/ChristopherFry/kpt-backstage-plugins/commit/5d2029c8d09d7729488b4131a79172cadf2524ab))
+
 ## [0.1.0](https://github.com/ChristopherFry/kpt-backstage-plugins/compare/backstage-plugin-cad-v0.0.0...backstage-plugin-cad-v0.1.0) (2022-05-25)
 
 
