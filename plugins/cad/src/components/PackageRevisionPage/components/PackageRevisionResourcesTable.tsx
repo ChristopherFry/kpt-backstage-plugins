@@ -23,7 +23,7 @@ import { startCase, sum } from 'lodash';
 import React, { Fragment, useRef, useState } from 'react';
 import {
   KubernetesKeyValueObject,
-  KubernetesResource,
+  KubernetesResource
 } from '../../../types/KubernetesResource';
 import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
 import {
@@ -31,7 +31,7 @@ import {
   getPackageResourcesFromResourcesMap,
   PackageResource,
   removeResourceFromResourcesMap,
-  updateResourceInResourcesMap,
+  updateResourceInResourcesMap
 } from '../../../utils/packageRevisionResources';
 import { dumpYaml } from '../../../utils/yaml';
 import { ResourceEditorDialog } from '../../ResourceEditorDialog';
@@ -45,12 +45,14 @@ export enum ResourcesTableMode {
 enum Dialog {
   VIEWER = 'viewer',
   EDITOR = 'editor',
+  DIFF_VIEWER = 'diff-viewer',
   NONE = 'none',
 }
 
 type PackageRevisionResourcesTableProps = {
   resourcesMap: PackageRevisionResourcesMap;
   baseResourcesMap?: PackageRevisionResourcesMap;
+  diffDesc?: string;
   mode: ResourcesTableMode;
   onUpdatedResourcesMap?: (resourcesMap: PackageRevisionResourcesMap) => void;
 };
@@ -69,6 +71,7 @@ type KubernetesGKV = {
 };
 
 type DialogResource = {
+  id: string;
   yaml: string;
   filename?: string;
   resourceIndex?: number;
@@ -77,6 +80,7 @@ type DialogResource = {
 export const PackageRevisionResourcesTable = ({
   resourcesMap,
   baseResourcesMap,
+  diffDesc,
   mode,
   onUpdatedResourcesMap,
 }: PackageRevisionResourcesTableProps) => {
@@ -180,6 +184,12 @@ export const PackageRevisionResourcesTable = ({
     return options;
   };
 
+  const baseResources = (
+    baseResourcesMap
+      ? getPackageResourcesFromResourcesMap(baseResourcesMap)
+      : []
+  ) as ResourceRow[];
+
   const columns: TableColumn<ResourceRow>[] = [
     { title: 'Kind', field: 'kind' },
     { title: 'Name', field: 'name' },
@@ -189,7 +199,7 @@ export const PackageRevisionResourcesTable = ({
   ];
 
   if (baseResourcesMap) {
-    columns[3] = { title: 'Diff', field: 'diffSummary' };
+    columns[3] = { title: `${diffDesc} Diff`, field: 'diffSummary' };
   }
 
   const allResources = getPackageResourcesFromResourcesMap(
@@ -216,6 +226,7 @@ export const PackageRevisionResourcesTable = ({
     return resourceScore(resource1) < resourceScore(resource2) ? 1 : -1;
   });
 
+
   if (baseResourcesMap) {
     const baseResources = (
       baseResourcesMap
@@ -236,9 +247,31 @@ export const PackageRevisionResourcesTable = ({
         const baseResource = baseResources.find(br => br.id === r.id);
 
         if (r.isDeleted) {
-          r.diffSummary = 'Removed';
+          r.diffSummary = (
+            <Button
+              onClick={event => {
+                event.stopPropagation();
+                openResourceDialog(Dialog.DIFF_VIEWER, r);
+              }}
+              style={{ position: 'absolute', transform: 'translateY(-50%)' }}
+              variant="outlined"
+            >
+              <span>Removed</span>
+            </Button>
+          );;
         } else if (!baseResource) {
-          r.diffSummary = 'Added';
+          r.diffSummary = (
+            <Button
+              onClick={event => {
+                event.stopPropagation();
+                openResourceDialog(Dialog.DIFF_VIEWER, r);
+              }}
+              style={{ position: 'absolute', transform: 'translateY(-50%)' }}
+              variant="outlined"
+            >
+              <span>Removed</span>
+            </Button>
+          );
         } else if (baseResource.yaml !== r.yaml) {
           const thisDiff = diffLines(baseResource.yaml, r.yaml);
 
@@ -249,7 +282,19 @@ export const PackageRevisionResourcesTable = ({
             thisDiff.filter(d => !!d.removed).map(d => d.count),
           );
 
-          r.diffSummary = `Updated (+${addedLines}, -${removedLines})`;
+          
+          r.diffSummary = (
+            <Button
+              onClick={event => {
+                event.stopPropagation();
+                openResourceDialog(Dialog.DIFF_VIEWER, r);
+              }}
+              style={{ position: 'absolute', transform: 'translateY(-50%)' }}
+              variant="outlined"
+            >
+                <span>Updated (+{addedLines}, -{removedLines})</span>
+            </Button>
+          );
         }
       });
     }
@@ -328,7 +373,7 @@ export const PackageRevisionResourcesTable = ({
   const addResource = (resourceGVK?: KubernetesGKV): void => {
     const resourceJson = resourceGVK
       ? generateNewResource(resourceGVK)
-      : generateNewResource({ apiVersion: '', kind: '' });
+      : generateNewResource({ id: '', apiVersion: '', kind: '' });
 
     const yaml = dumpYaml(resourceJson);
 
@@ -341,6 +386,10 @@ export const PackageRevisionResourcesTable = ({
     onAddResourceMenuClose();
     addResource(gvk);
   };
+
+  const selectedBaseResource = baseResources.find(
+    r => r.id === selectedDialogResource.current?.id,
+  );
 
   const renderAddResourceButtonGroup = (): JSX.Element => {
     if (isEditMode) {
@@ -393,6 +442,13 @@ export const PackageRevisionResourcesTable = ({
         open={openDialog === Dialog.VIEWER}
         onClose={closeDialog}
         yaml={selectedDialogResource.current?.yaml ?? ''}
+      />
+
+      <ResourceViewerDialog
+        open={openDialog === Dialog.DIFF_VIEWER}
+        onClose={closeDialog}
+        yaml={selectedDialogResource.current?.yaml ?? ''}
+        baseYaml={selectedBaseResource?.yaml}
       />
 
       <Table<ResourceRow>

@@ -27,12 +27,14 @@ type FirstClassViewerSelectorProps = {
   apiVersion: string;
   kind: string;
   yaml: string;
+  baseYaml: string;
 };
 
 export const FirstClassViewerSelector = ({
   apiVersion,
   kind,
   yaml,
+  baseYaml,
 }: FirstClassViewerSelectorProps) => {
   const groupVersionKind = `${apiVersion}/${kind}`;
 
@@ -41,6 +43,7 @@ export const FirstClassViewerSelector = ({
       return (
         <StructuredMetadata
           yaml={yaml}
+          baseYaml={baseYaml}
           getCustomMetadata={getApplyReplacementsStructuredMetadata}
         />
       );
@@ -49,6 +52,7 @@ export const FirstClassViewerSelector = ({
       return (
         <StructuredMetadata
           yaml={yaml}
+          baseYaml={baseYaml}
           getCustomMetadata={getKptfileStructuredMetadata}
         />
       );
@@ -57,6 +61,7 @@ export const FirstClassViewerSelector = ({
       return (
         <StructuredMetadata
           yaml={yaml}
+          baseYaml={baseYaml}
           getCustomMetadata={getRoleStructuredMetadata}
         />
       );
@@ -65,6 +70,7 @@ export const FirstClassViewerSelector = ({
       return (
         <StructuredMetadata
           yaml={yaml}
+          baseYaml={baseYaml}
           getCustomMetadata={getRoleBindingStructuredMetadata}
         />
       );
@@ -73,20 +79,22 @@ export const FirstClassViewerSelector = ({
       return (
         <StructuredMetadata
           yaml={yaml}
+          baseYaml={baseYaml}
           getCustomMetadata={getConfigMapStructuredMetadata}
         />
       );
 
     case 'v1/Namespace':
-      return <StructuredMetadata yaml={yaml} />;
+      return <StructuredMetadata yaml={yaml} baseYaml={baseYaml} />;
 
     case 'v1/ServiceAccount':
-      return <StructuredMetadata yaml={yaml} />;
+      return <StructuredMetadata yaml={yaml} baseYaml={baseYaml} />;
 
     case 'v1/ResourceQuota':
       return (
         <StructuredMetadata
           yaml={yaml}
+          baseYaml={baseYaml}
           getCustomMetadata={getResourceQuotaStructuredMetadata}
         />
       );
@@ -94,5 +102,5 @@ export const FirstClassViewerSelector = ({
     default:
   }
 
-  return <StructuredMetadata yaml={yaml} />;
+  return <StructuredMetadata yaml={yaml} baseYaml={baseYaml} />;
 };

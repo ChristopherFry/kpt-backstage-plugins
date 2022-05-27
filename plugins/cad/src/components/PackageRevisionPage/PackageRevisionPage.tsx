@@ -125,6 +125,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
+  const [upstreamPackageRevision, setUpstreamPackageRevision] =
+    useState<PackageRevision>();
   const [packageRevision, setPackageRevision] = useState<PackageRevision>();
   const [packageRevisions, setPackageRevisions] = useState<PackageRevision[]>();
   const [resourcesMap, setResourcesMap] = useState<PackageRevisionResourcesMap>(
@@ -141,6 +143,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [diffSelection, setDiffSelection] = useState<string>('none');
 
   const [openRestoreDialog, setOpenRestoreDialog] = useState<boolean>(false);
+  const [diffDesc, setDiffDesc] = useState<string>('');
 
   const loadRepositorySummary = async (): Promise<void> => {
     const thisRepositorySummary = await getRepositorySummary(
@@ -190,6 +193,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         diffItems.push({
           label: `Previous Revision (${basePackageRevision.spec.revision})`,
           value: basePackageRevision.metadata.name,
+          desc: basePackageRevision.spec.revision,
         });
       }
     }
@@ -215,6 +219,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
           diffItems.push({
             label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
             value: upstreamPackage.metadata.name,
+            desc: `Upstream`,
           });
         }
       }
@@ -239,6 +244,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
           diffSelection,
         );
         setBaseResourcesMap(upstreamResources.spec.resources);
+
+        setDiffDesc(
+          selectDiffItems.find(v => v.value === diffSelection)?.desc,
+        );
       };
 
       setUpstream();
@@ -812,6 +821,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
                 <PackageRevisionResourcesTable
                   resourcesMap={resourcesMap}
                   baseResourcesMap={baseResourcesMap}
+                  diffDesc={diffDesc}
                   mode={resourcesTableMode}
                   onUpdatedResourcesMap={handleUpdatedResourcesMap}
                 />

@@ -32,6 +32,7 @@ type ResourceViewerProps = {
   open: boolean;
   onClose: () => void;
   yaml: string;
+  baseYaml: string;
 };
 
 const useStyles = makeStyles({
@@ -48,6 +49,7 @@ export const ResourceViewerDialog = ({
   open,
   onClose,
   yaml,
+  baseYaml,
 }: ResourceViewerProps) => {
   const [showYamlView, setShowYamlView] = useState<boolean>(false);
   const classes = useStyles();
@@ -58,16 +60,21 @@ export const ResourceViewerDialog = ({
     }
   }, [open]);
 
-  if (!yaml) return <div />;
+  // if (!yaml) return <div />;
 
-  const resourceYaml = loadYaml(yaml) as KubernetesResource;
+  //if (!yaml) yaml = baseYaml;
+  //if (!yaml) return <Fragment />
+
+  const resourceYaml = loadYaml(yaml || baseYaml) as KubernetesResource;
 
   const toggleView = (): void => {
     setShowYamlView(!showYamlView);
   };
 
-  const { kind, apiVersion } = resourceYaml;
-  const resourceName = resourceYaml.metadata.name;
+  // const { kind, apiVersion } = resourceYaml;
+  const kind = resourceYaml.kind ?? '';
+  const apiVersion = resourceYaml?.apiVersion ?? '';
+  const resourceName = resourceYaml?.metadata?.name ?? '';
 
   const displayYamlHeight = (yaml.split('\n').length + 1) * 18;
 
@@ -83,12 +90,13 @@ export const ResourceViewerDialog = ({
             style={{ height: `${displayYamlHeight}px` }}
           >
             {showYamlView ? (
-              <YamlViewer value={yaml} />
+              <YamlViewer value={yaml} baseValue={baseYaml ?? ''} />
             ) : (
               <FirstClassViewerSelector
                 apiVersion={apiVersion}
                 kind={kind}
                 yaml={yaml}
+                baseYaml={baseYaml}
               />
             )}
           </div>

@@ -35,6 +35,7 @@ type ResourceEditorProps = {
   open: boolean;
   onClose: () => void;
   yaml: string;
+  baseYaml?: string;
   onSaveYaml: OnSaveYamlFn;
   packageResources: PackageResource[];
 };
@@ -53,6 +54,7 @@ export const ResourceEditorDialog = ({
   open,
   onClose,
   yaml,
+  baseYaml,
   onSaveYaml,
   packageResources,
 }: ResourceEditorProps) => {
@@ -116,6 +118,7 @@ export const ResourceEditorDialog = ({
             ) : (
               <YamlViewer
                 value={latestYaml}
+                baseValue={baseYaml}
                 allowEdit
                 onUpdatedValue={handleUpdatedYaml}
               />
