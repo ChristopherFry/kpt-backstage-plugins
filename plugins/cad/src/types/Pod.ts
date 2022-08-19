@@ -63,6 +63,7 @@ export type Container = {
   args?: string[];
   ports?: ContainerPort[];
   volumeMounts?: VolumeMount[];
+  env?: Env[]; // CHRIS ADD
 };
 
 export type ContainerPort = {
@@ -75,4 +76,14 @@ export type VolumeMount = {
   name: string;
   mountPath: string;
   readOnly?: boolean;
+};
+
+export type Env = {
+  name: string;
+  valueFrom?: {
+    secretKeyRef: SecretKeyRef
+  };
+}
+export type SecretKeyRef = {
+  name: string;
 };

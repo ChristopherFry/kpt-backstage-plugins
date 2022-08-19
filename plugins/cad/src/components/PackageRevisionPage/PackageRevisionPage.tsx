@@ -23,7 +23,7 @@ import {
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, Typography } from '@material-ui/core';
 import Alert, { Color } from '@material-ui/lab/Alert';
-import { cloneDeep, uniq } from 'lodash';
+import { cloneDeep, flatten, uniq } from 'lodash';
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
@@ -59,6 +59,7 @@ import {
   sortByPackageNameAndRevisionComparison,
 } from '../../utils/packageRevision';
 import {
+  getPackageResourcesFromResourcesMap,
   getPackageRevisionResources,
   getPackageRevisionResourcesResource,
 } from '../../utils/packageRevisionResources';
@@ -95,6 +96,7 @@ import {
   getRevisionSummary,
   RevisionSummary,
 } from '../../utils/revisionSummary';
+import { getMessage, identifyPackageDependencies } from './packageDependencies/packageDependencies';
 
 export enum PackageRevisionPageMode {
   EDIT = 'edit',
@@ -772,6 +774,17 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         ),
       );
     }
+  }
+
+  if (resourcesMap) {
+    const thisPackageResources = getPackageResourcesFromResourcesMap(resourcesMap);
+    const ePackageResources = identifyPackageDependencies(thisPackageResources);
+
+    const allExternalRequirements = flatten(ePackageResources.map(r => r.requires)).filter(r => !r.fulfilled);
+
+    const allMessages = uniq(allExternalRequirements.map(r => getMessage(r))).sort();
+
+    allMessages.forEach(m => alertMessages.push({ key:'asdf', message: (<span>{m}</span>) }));
   }
 
   const showDownstreamPackages =
