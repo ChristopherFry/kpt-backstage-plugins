@@ -17,6 +17,7 @@
 import {
   Breadcrumbs,
   ContentHeader,
+  Link,
   Progress,
   SelectItem,
   SimpleStepper,
@@ -30,13 +31,25 @@ import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { ConfigAsDataApi, configAsDataApiRef } from '../../apis';
 import { packageRouteRef } from '../../routes';
+import { ConfigMap } from '../../types/ConfigMap';
 import { Kptfile } from '../../types/Kptfile';
+import {
+  KubernetesKeyValueObject,
+  KubernetesResource,
+} from '../../types/KubernetesResource';
+import { Namespace } from '../../types/Namespace';
 import {
   PackageRevision,
   PackageRevisionLifecycle,
 } from '../../types/PackageRevision';
 import { PackageRevisionResourcesMap } from '../../types/PackageRevisionResource';
 import { Repository } from '../../types/Repository';
+import { SetLabels } from '../../types/SetLabels';
+import {
+  findKptFunctionInPipeline,
+  getLatestFunction,
+  groupFunctionsByName,
+} from '../../utils/function';
 import {
   canCloneRevision,
   getCloneTask,
@@ -45,6 +58,7 @@ import {
   getPackageRevisionResource,
 } from '../../utils/packageRevision';
 import {
+  addResourceToResourcesMap,
   getPackageResourcesFromResourcesMap,
   getPackageRevisionResourcesResource,
   getRootKptfile,
@@ -60,12 +74,20 @@ import {
 import { sortByLabel } from '../../utils/selectItem';
 import { emptyIfUndefined, toLowerCase } from '../../utils/string';
 import { dumpYaml, loadYaml } from '../../utils/yaml';
+import { Checkbox } from '../Controls';
 import { Select } from '../Controls/Select';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 
 const useStyles = makeStyles(() => ({
   stepContent: {
     maxWidth: '600px',
+    '& > *': {
+      marginTop: '16px',
+    },
+  },
+  checkboxConditionalElements: {
+    marginLeft: '32px',
+    marginTop: '8px',
     '& > *': {
       marginTop: '16px',
     },
@@ -96,6 +118,18 @@ type KptfileState = {
   site: string;
 };
 
+type BestPracticesState = {
+  setNamespace: boolean;
+  createNamespace: boolean;
+  namespaceOption: string;
+  namespace: string;
+  setLabels: boolean;
+  applicationNameLabel: string;
+  componentLabel: string;
+  partOfLabel: string;
+  setKubeval: boolean;
+};
+
 const mapPackageRevisionToSelectItem = (
   packageRevision: PackageRevision,
 ): PackageRevisionSelectItem => ({
@@ -123,6 +157,44 @@ const getPackageResources = async (
   const resources = getPackageResourcesFromResourcesMap(resourcesMap);
 
   return [resources, resourcesMap];
+};
+
+const createResource = (
+  apiVersion: string,
+  kind: string,
+  name: string,
+  localConfig: boolean = true,
+): KubernetesResource => {
+  const resource: KubernetesResource = {
+    apiVersion: apiVersion,
+    kind: kind,
+    metadata: {
+      name: name,
+    },
+  };
+
+  if (localConfig) {
+    resource.metadata.annotations = {
+      'config.kubernetes.io/local-config': 'true',
+    };
+  }
+
+  return resource;
+};
+
+const addPackageResource = (
+  packageResources: PackageResource[],
+  resource: KubernetesResource,
+  filename: string,
+): PackageResource => {
+  const packageResource: PackageResource = {
+    filename: filename,
+    yaml: dumpYaml(resource),
+  } as PackageResource;
+
+  packageResources.push(packageResource);
+
+  return packageResource;
 };
 
 export const AddPackagePage = ({ action }: AddPackagePageProps) => {
@@ -156,6 +228,19 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     keywords: '',
     site: '',
   });
+
+  const [bestPracticesState, setBestPracticesState] =
+    useState<BestPracticesState>({
+      setNamespace: false,
+      createNamespace: false,
+      namespaceOption: 'user-defined',
+      namespace: '',
+      setLabels: false,
+      applicationNameLabel: '',
+      partOfLabel: '',
+      componentLabel: '',
+      setKubeval: false,
+    });
 
   const [isCreatingPackage, setIsCreatingPackage] = useState<boolean>(false);
 
@@ -303,6 +388,73 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
           keywords: emptyIfUndefined(thisKptfile.info?.keywords?.join(', ')),
           site: emptyIfUndefined(thisKptfile.info?.site),
         });
+
+        const namespaceMutatorFn = findKptFunctionInPipeline(
+          thisKptfile.pipeline?.mutators || [],
+          'set-namespace',
+        );
+        let namespaceOption = '';
+        let namespace = '';
+        if (namespaceMutatorFn) {
+          namespaceOption =
+            namespaceMutatorFn.configPath === 'package-context'
+              ? 'deployment'
+              : 'user-defined';
+
+          if (namespaceOption === 'user-defined') {
+            const namespaceConfig = resources.find(
+              f =>
+                f.filename === namespaceMutatorFn.configPath &&
+                f.kind === 'SetNamespace',
+            );
+
+            if (namespaceConfig) {
+              namespace = loadYaml(namespaceConfig.yaml).namespace;
+            }
+          }
+        }
+
+        const setLabelsMutatorFn = findKptFunctionInPipeline(
+          thisKptfile.pipeline?.mutators || [],
+          'set-labels',
+        );
+        let applicationNameLabel = '';
+        let partOfLabel = '';
+        let componentLabel = '';
+        if (setLabelsMutatorFn) {
+          const setLabelsConfig = resources.find(
+            f =>
+              f.filename === setLabelsMutatorFn.configPath &&
+              f.kind === 'SetLabels',
+          );
+
+          if (setLabelsConfig) {
+            const setLabels: SetLabels = loadYaml(setLabelsConfig.yaml);
+
+            applicationNameLabel =
+              setLabels.labels['app.kubernetes.io/name'] || '';
+            partOfLabel = setLabels.labels['app.kubernetes.io/part-of'] || '';
+            componentLabel =
+              setLabels.labels['app.kubernetes.io/component'] || '';
+          }
+        }
+
+        const kubevalValidatorFn = findKptFunctionInPipeline(
+          thisKptfile.pipeline?.validators || [],
+          'kubeval',
+        );
+
+        setBestPracticesState({
+          setNamespace: !!namespaceMutatorFn,
+          createNamespace: false,
+          namespaceOption: namespaceOption,
+          namespace: namespace,
+          setLabels: !!setLabelsMutatorFn,
+          applicationNameLabel: applicationNameLabel,
+          partOfLabel: partOfLabel,
+          componentLabel: componentLabel,
+          setKubeval: !!kubevalValidatorFn,
+        });
       };
 
       updateKptfileState(sourcePackageRevision.metadata.name);
@@ -346,17 +498,160 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     return thisPackage?.spec.packageName || packageName;
   };
 
-  const updatePackageResources = async (
-    thisPackageName: string,
-  ): Promise<void> => {
-    const updateRequired = !!sourcePackageRevision;
+  const applyBestPractices = async (
+    resourcesMap: PackageRevisionResourcesMap,
+  ): Promise<PackageRevisionResourcesMap> => {
+    let resourcesMap2 = resourcesMap;
 
-    if (!updateRequired) return;
+    if (
+      bestPracticesState.setNamespace ||
+      bestPracticesState.setLabels ||
+      bestPracticesState.setKubeval
+    ) {
+      const allKptFunctions = await api.listCatalogFunctions();
+      const kptFunctions = groupFunctionsByName(allKptFunctions);
 
-    const [resources, resourcesMap] = await getPackageResources(
-      api,
-      thisPackageName,
-    );
+      const packageResources =
+        getPackageResourcesFromResourcesMap(resourcesMap2);
+      const kptfileResource = getRootKptfile(packageResources);
+
+      const kptfileYaml = loadYaml(kptfileResource.yaml) as Kptfile;
+      const mutators = kptfileYaml.pipeline?.mutators ?? [];
+      const validators = kptfileYaml.pipeline?.validators ?? [];
+      const newPackageResources: PackageResource[] = [];
+
+      if (bestPracticesState.setNamespace) {
+        const setNamespaceFn = getLatestFunction(kptFunctions, 'set-namespace');
+
+        if (bestPracticesState.createNamespace) {
+          const namespaceResource: Namespace = createResource(
+            'v1',
+            'Namespace',
+            'this-namespace',
+            false,
+          );
+
+          addPackageResource(
+            newPackageResources,
+            namespaceResource,
+            'namespace.yaml',
+          );
+        }
+
+        if (bestPracticesState.namespaceOption === 'user-defined') {
+          const setNamespaceResource = {
+            ...createResource(
+              'fn.kpt.dev/v1alpha1',
+              'SetNamespace',
+              'set-namespace',
+            ),
+            namespace: bestPracticesState.namespace,
+          };
+
+          const setNamespacePackageResource = addPackageResource(
+            newPackageResources,
+            setNamespaceResource,
+            'set-namespace.yaml',
+          );
+
+          mutators.push({
+            image: setNamespaceFn.spec.image,
+            configPath: setNamespacePackageResource.filename,
+          });
+        } else if (bestPracticesState.namespaceOption === 'deployment') {
+          mutators.push({
+            image: setNamespaceFn.spec.image,
+            configPath: 'package-context.yaml',
+          });
+        }
+      }
+
+      if (bestPracticesState.setLabels) {
+        const setLabelsFn = getLatestFunction(kptFunctions, 'set-labels');
+
+        const labels: KubernetesKeyValueObject = {};
+        if (bestPracticesState.applicationNameLabel)
+          labels['app.kubernetes.io/name'] =
+            bestPracticesState.applicationNameLabel;
+        if (bestPracticesState.componentLabel)
+          labels['app.kubernetes.io/component'] =
+            bestPracticesState.componentLabel;
+        if (bestPracticesState.partOfLabel)
+          labels['app.kubernetes.io/part-of'] = bestPracticesState.partOfLabel;
+
+        if (Object.keys(labels).length > 0) {
+          const setLabelsResource: SetLabels = {
+            ...createResource('fn.kpt.dev/v1alpha1', 'SetLabels', 'set-labels'),
+            labels,
+          };
+
+          const setLabelsPackageResource = addPackageResource(
+            newPackageResources,
+            setLabelsResource,
+            'set-labels.yaml',
+          );
+
+          mutators.push({
+            image: setLabelsFn.spec.image,
+            configPath: setLabelsPackageResource.filename,
+          });
+        }
+      }
+
+      if (bestPracticesState.setKubeval) {
+        const kubevalFn = getLatestFunction(kptFunctions, 'kubeval');
+
+        const kubevalConfigResource: ConfigMap = {
+          ...createResource('v1', 'ConfigMap', 'kubeval-config'),
+          data: {
+            ignore_missing_schemas: 'true',
+          },
+        };
+
+        const kubevalConfigPackageResource = addPackageResource(
+          newPackageResources,
+          kubevalConfigResource,
+          'kubeval-config.yaml',
+        );
+
+        validators.push({
+          image: kubevalFn.spec.image,
+          configPath: kubevalConfigPackageResource.filename,
+        });
+      }
+
+      for (const newResource of newPackageResources) {
+        resourcesMap2 = addResourceToResourcesMap(resourcesMap2, newResource);
+      }
+
+      kptfileYaml.pipeline = {
+        ...(kptfileYaml.pipeline ?? {}),
+        mutators,
+        validators,
+      };
+
+      const updatedKptfileYaml = dumpYaml(kptfileYaml);
+
+      resourcesMap2 = updateResourceInResourcesMap(
+        resourcesMap2,
+        kptfileResource,
+        updatedKptfileYaml,
+      );
+    }
+
+    return resourcesMap2;
+  };
+
+  const updateKptfileInfo = (
+    resourcesMap: PackageRevisionResourcesMap,
+  ): PackageRevisionResourcesMap => {
+    const isClonePackageAction = !!sourcePackageRevision;
+
+    if (!isClonePackageAction) {
+      return resourcesMap;
+    }
+
+    const resources = getPackageResourcesFromResourcesMap(resourcesMap);
 
     const kptfileResource = getRootKptfile(resources);
 
@@ -376,11 +671,26 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       updatedKptfileYaml,
     );
 
-    const packageRevisionResources = getPackageRevisionResourcesResource(
-      thisPackageName,
-      updatedResourceMap,
-    );
-    await api.replacePackageRevisionResources(packageRevisionResources);
+    return updatedResourceMap;
+  };
+
+  const updatePackageResources = async (
+    newPackageName: string,
+  ): Promise<void> => {
+    const [_, resourcesMap] = await getPackageResources(api, newPackageName);
+
+    let updatedResourcesMap = await applyBestPractices(resourcesMap);
+
+    updatedResourcesMap = updateKptfileInfo(resourcesMap);
+
+    if (updatedResourcesMap !== resourcesMap) {
+      const packageRevisionResources = getPackageRevisionResourcesResource(
+        newPackageName,
+        updatedResourcesMap,
+      );
+
+      await api.replacePackageRevisionResources(packageRevisionResources);
+    }
   };
 
   const createPackage = async (): Promise<void> => {
@@ -533,12 +843,17 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               variant="outlined"
               value={kptfileState.name}
               name="name"
-              onChange={e =>
-                setKptfileState(s => ({
-                  ...s,
-                  name: e.target.value,
-                }))
-              }
+              onChange={e => {
+                const thisPackageName = e.target.value;
+
+                if (!sourcePackageRevision) {
+                  setBestPracticesState(s => ({
+                    ...s,
+                    namespace: thisPackageName,
+                    applicationNameLabel: thisPackageName,
+                  }));
+                }
+              }}
               fullWidth
               helperText={`The name of the ${targetRepositoryPackageDescriptorLowercase} to create.`}
             />
@@ -577,6 +892,160 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               }
               fullWidth
               helperText={`Optional. The URL for the ${targetRepositoryPackageDescriptorLowercase}'s web page.`}
+            />
+          </div>
+        </SimpleStepperStep>
+
+        <SimpleStepperStep title="Namespace">
+          <div className={classes.stepContent}>
+            <Checkbox
+              label="Set the same namespace for all namespace scoped resources"
+              checked={bestPracticesState.setNamespace}
+              onChange={isChecked =>
+                setBestPracticesState(s => ({
+                  ...s,
+                  setNamespace: isChecked,
+                }))
+              }
+              helperText="This ensures that all resources have the namespace that can be easily changed in a single place. The namespace can either be static or set to the name of a deployment when a deployment instance is created."
+            />
+
+            {bestPracticesState.setNamespace && (
+              <div className={classes.checkboxConditionalElements}>
+                {!sourcePackageRevision && (
+                  <Checkbox
+                    label="Add namespace resource to package"
+                    checked={bestPracticesState.createNamespace}
+                    onChange={isChecked =>
+                      setBestPracticesState(s => ({
+                        ...s,
+                        createNamespace: isChecked,
+                      }))
+                    }
+                    helperText={`If checked, a namespace resource will be added to the ${targetRepositoryPackageDescriptorLowercase}.`}
+                  />
+                )}
+
+                <Select
+                  label="Namespace Option"
+                  onChange={value =>
+                    setBestPracticesState(s => ({
+                      ...s,
+                      namespaceOption: value,
+                    }))
+                  }
+                  selected={bestPracticesState.namespaceOption}
+                  items={[
+                    {
+                      label: 'Set specific namespace',
+                      value: 'user-defined',
+                    },
+                    {
+                      label:
+                        'Set namespace to the name of the deployment instance',
+                      value: 'deployment',
+                    },
+                  ]}
+                  helperText="The logic to set the name of the namespace."
+                />
+
+                {bestPracticesState.namespaceOption === 'user-defined' && (
+                  <TextField
+                    label="Namespace"
+                    variant="outlined"
+                    value={bestPracticesState.namespace}
+                    onChange={e =>
+                      setBestPracticesState(s => ({
+                        ...s,
+                        namespace: e.target.value,
+                      }))
+                    }
+                    fullWidth
+                    helperText="The namespace all namespace scoped resources will be set to."
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </SimpleStepperStep>
+
+        <SimpleStepperStep title="Application Labels">
+          <div className={classes.stepContent}>
+            <Checkbox
+              label="Add Kubernetes recommended application labels across all resources"
+              checked={bestPracticesState.setLabels}
+              onChange={isChecked =>
+                setBestPracticesState(s => ({ ...s, setLabels: isChecked }))
+              }
+              helperText={
+                <Fragment>
+                  This will add several of the Kubernetes{' '}
+                  <Link to="https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels">
+                    recommended labels
+                  </Link>{' '}
+                  to the resources in the{' '}
+                  {targetRepositoryPackageDescriptorLowercase}.
+                </Fragment>
+              }
+            />
+
+            {bestPracticesState.setLabels && (
+              <div className={classes.checkboxConditionalElements}>
+                <TextField
+                  label="Application Name"
+                  variant="outlined"
+                  value={bestPracticesState.applicationNameLabel}
+                  onChange={e =>
+                    setBestPracticesState(s => ({
+                      ...s,
+                      applicationNameLabel: e.target.value,
+                    }))
+                  }
+                  fullWidth
+                  helperText="Optional. Name of the application. This will be added as the app.kubernetes.io/name label."
+                />
+
+                <TextField
+                  label="Component Name"
+                  variant="outlined"
+                  value={bestPracticesState.componentLabel}
+                  onChange={e =>
+                    setBestPracticesState(s => ({
+                      ...s,
+                      componentLabel: e.target.value,
+                    }))
+                  }
+                  fullWidth
+                  helperText="Optional. The component within the architecture. This will be added as the app.kubernetes.io/component label."
+                />
+
+                <TextField
+                  label="Part Of Application"
+                  variant="outlined"
+                  value={bestPracticesState.partOfLabel}
+                  onChange={e =>
+                    setBestPracticesState(s => ({
+                      ...s,
+                      partOfLabel: e.target.value,
+                    }))
+                  }
+                  fullWidth
+                  helperText="Optional. The name of a higher level application this one is part of. This will be added as the app.kubernetes.io/part-of label."
+                />
+              </div>
+            )}
+          </div>
+        </SimpleStepperStep>
+
+        <SimpleStepperStep title="Validate Resources">
+          <div className={classes.stepContent}>
+            <Checkbox
+              label="Validate resources for any OpenAPI schema errors"
+              checked={bestPracticesState.setKubeval}
+              onChange={isChecked =>
+                setBestPracticesState(s => ({ ...s, setKubeval: isChecked }))
+              }
+              helperText="This validates each resource ensuring it is syntactically correct against its schema. These errors will cause a resource not to deploy to a cluster correctly otherwise. Validation is limited to kubernetes built-in types and GCP CRDs."
             />
           </div>
         </SimpleStepperStep>

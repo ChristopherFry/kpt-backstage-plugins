@@ -16,6 +16,7 @@
 
 import { Function } from '../types/Function';
 import { groupBy } from 'lodash';
+import { KptfileFunction } from '../types/Kptfile';
 
 type GroupFunctionsByName = {
   [key: string]: Function[];
@@ -62,10 +63,32 @@ export const groupFunctionsByName = (
   return functionsGroupedByName;
 };
 
+export const getLatestFunction = (
+  functions: GroupFunctionsByName,
+  fnName: string,
+): Function => {
+  const fnGroup = functions[fnName];
+
+  if (!fnGroup) {
+    throw new Error(`Function ${fnName} not found`);
+  }
+
+  return fnGroup[0];
+};
+
 export const isMutatorFunction = (kptFunction: Function): boolean => {
   return kptFunction.spec.functionTypes.includes('mutator');
 };
 
 export const isValidatorFunction = (kptFunction: Function): boolean => {
   return kptFunction.spec.functionTypes.includes('validator');
+};
+
+export const findKptFunctionInPipeline = (
+  pipelineFunctions: KptfileFunction[],
+  fnName: string,
+): KptfileFunction | undefined => {
+  return pipelineFunctions.find(
+    fn => getFunctionNameFromImage(fn.image) === fnName,
+  );
 };
