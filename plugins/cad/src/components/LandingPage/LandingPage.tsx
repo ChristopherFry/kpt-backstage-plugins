@@ -30,10 +30,20 @@ import {
   packagesRouteRef,
   registerRepositoryRouteRef,
   repositoryRouteRef,
+  nephioPackageDeploymentsRouteRef,
+  nephioNamedPackageDeploymentRouteRef,
+  nephioAddPackageDeploymentRouteRef,
+  nephioFiveGTopologiesRouteRef,
+  nephioNamedFiveGTopologyRouteRef,
 } from '../../routes';
 import { loadFeatures } from '../../utils/featureFlags';
 import { AddPackagePage } from '../AddPackagePage';
 import { AddPackagePageAction } from '../AddPackagePage/AddPackagePage';
+import { CoreTopologyPage } from '../Nephio/FiveGCoreTopologiesPage/CoreTopologyPage';
+import { FiveGCoreTopologiesPage } from '../Nephio/FiveGCoreTopologiesPage/FiveGCoreTopologiesPage';
+import { PackageDeploymentsPage } from '../Nephio/PackageDeploymentsPage';
+import { AddPackageDeploymentPage } from '../Nephio/PackageDeploymentsPage/AddPackageDeploymentPage';
+import { PackageDeploymentPage } from '../Nephio/PackageDeploymentsPage/PackageDeploymentPage';
 import { PackageManagementPage } from '../PackageManagementPage';
 import { PackageRevisionPage } from '../PackageRevisionPage';
 import { PackageRevisionPageMode } from '../PackageRevisionPage/PackageRevisionPage';
@@ -105,6 +115,26 @@ export const LandingPage = () => {
         <Route
           path={editPackageRouteRef.path}
           element={<PackageRevisionPage mode={PackageRevisionPageMode.EDIT} />}
+        />
+        <Route
+          path={nephioPackageDeploymentsRouteRef.path}
+          element={<PackageDeploymentsPage />}
+        />
+        <Route
+          path={nephioNamedPackageDeploymentRouteRef.path}
+          element={<PackageDeploymentPage />}
+        />
+        <Route
+          path={nephioAddPackageDeploymentRouteRef.path}
+          element={<AddPackageDeploymentPage />}
+        />
+        <Route
+          path={nephioFiveGTopologiesRouteRef.path}
+          element={<FiveGCoreTopologiesPage />}
+        />
+        <Route
+          path={nephioNamedFiveGTopologyRouteRef.path}
+          element={<CoreTopologyPage />}
         />
       </Routes>
     );

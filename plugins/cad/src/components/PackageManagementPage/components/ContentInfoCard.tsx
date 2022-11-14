@@ -64,7 +64,7 @@ const getActions = (
     <div className={className}>
       <Fragment>Repositories:</Fragment>&nbsp;
       {repositories.map((r, idx) => (
-        <Fragment>
+        <Fragment key={r.metadata.name}>
           <RepositoryLink repository={r} />
           {idx !== repositories.length - 1 && <Fragment>, </Fragment>}
         </Fragment>

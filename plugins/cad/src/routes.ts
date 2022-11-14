@@ -67,3 +67,33 @@ export const editPackageRouteRef = createSubRouteRef({
   path: '/repositories/:repositoryName/packages/:packageName/edit',
   parent: rootRouteRef,
 });
+
+export const nephioAddPackageDeploymentRouteRef = createSubRouteRef({
+  id: 'nephio-add-package-deployment',
+  path: '/package-deployments/add',
+  parent: rootRouteRef,
+});
+
+export const nephioNamedPackageDeploymentRouteRef = createSubRouteRef({
+  id: 'nephio-named-package-deployment',
+  path: '/package-deployments/:deploymentName',
+  parent: rootRouteRef,
+});
+
+export const nephioPackageDeploymentsRouteRef = createSubRouteRef({
+  id: 'nephio-package-deployments',
+  path: '/package-deployments',
+  parent: rootRouteRef,
+});
+
+export const nephioFiveGTopologiesRouteRef = createSubRouteRef({
+  id: 'nephio-topologies',
+  path: '/fiveg-topologies',
+  parent: rootRouteRef,
+});
+
+export const nephioNamedFiveGTopologyRouteRef = createSubRouteRef({
+  id: 'nephio-topologies',
+  path: '/fiveg-topologies/:coreTopology',
+  parent: rootRouteRef,
+});

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { TextField } from '@material-ui/core';
+import { FormHelperText, TextField } from '@material-ui/core';
 import { Autocomplete as MaterialAutocomplete } from '@material-ui/lab';
 import React, { ChangeEvent, useEffect, useRef } from 'react';
 
@@ -24,6 +24,7 @@ type AutocompleteProps = {
   value: string;
   onInputChange: (newValue: string) => void;
   allowArbitraryValues?: boolean;
+  helperText?: string;
 };
 
 export const Autocomplete = ({
@@ -32,6 +33,7 @@ export const Autocomplete = ({
   value,
   onInputChange,
   allowArbitraryValues,
+  helperText,
 }: AutocompleteProps) => {
   const thisValue = useRef<string>(value);
   const inputValue = useRef<string>(value);
@@ -59,17 +61,20 @@ export const Autocomplete = ({
   };
 
   return (
-    <MaterialAutocomplete
-      fullWidth
-      freeSolo={allowArbitraryValues ?? false}
-      options={options}
-      renderInput={params => (
-        <TextField {...params} label={label} variant="outlined" fullWidth />
-      )}
-      onChange={onAutocompleteChange}
-      onInputChange={onAutocompleteInputChange}
-      value={thisValue.current}
-      inputValue={inputValue.current}
-    />
+    <div>
+      <MaterialAutocomplete
+        fullWidth
+        freeSolo={allowArbitraryValues ?? false}
+        options={options}
+        renderInput={params => (
+          <TextField {...params} label={label} variant="outlined" fullWidth />
+        )}
+        onChange={onAutocompleteChange}
+        onInputChange={onAutocompleteInputChange}
+        value={thisValue.current}
+        inputValue={inputValue.current}
+      />
+      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+    </div>
   );
 };

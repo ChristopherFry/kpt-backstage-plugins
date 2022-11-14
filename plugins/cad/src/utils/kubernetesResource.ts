@@ -24,7 +24,14 @@ export const removeInternalKptAnnotations = (
   if (resourceMetadata.annotations) {
     const internalAnnotations = Object.keys(
       resourceMetadata.annotations,
-    ).filter(annotation => annotation.startsWith('internal.kpt.dev/'));
+    ).filter(
+      annotation =>
+        annotation.startsWith('internal.kpt.dev/') ||
+        annotation.startsWith(
+          'kubectl.kubernetes.io/last-applied-configuration',
+        ) ||
+        annotation.startsWith('config.k8s.io/owning-inventory'),
+    );
 
     internalAnnotations.forEach(
       internalAnnotation =>

@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
+import { Button } from '@backstage/core-components';
+import { useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles } from '@material-ui/core';
 import { flatten, groupBy } from 'lodash';
-import React from 'react';
+import React, { Fragment } from 'react';
+import {
+  nephioFiveGTopologiesRouteRef,
+  nephioPackageDeploymentsRouteRef,
+} from '../../../routes';
 import { RepositorySummary } from '../../../types/RepositorySummary';
 import {
   getPackageDescriptor,
@@ -54,30 +60,48 @@ export const DashboardTabContent = ({
   summaries,
 }: DashboardTabContentProps) => {
   const classes = useStyles();
+  const packageDeploymentsRef = useRouteRef(nephioPackageDeploymentsRouteRef);
+  const topologiesRef = useRouteRef(nephioFiveGTopologiesRouteRef);
 
   const repositoriesByContentType = groupBy(summaries, getDescriptor);
 
   return (
-    <div className={classes.cards}>
-      {PackageContentSummaryOrder.map(contentType => {
-        const contentRepositories =
-          repositoriesByContentType[contentType] || [];
-        const packageSummaries = flatten(
-          contentRepositories.map(r => r.packageSummaries || []),
-        );
-        const repositories = contentRepositories.map(
-          repository => repository.repository,
-        );
+    <Fragment>
+      <div style={{ marginBottom: '16px' }}>
+        <Button
+          style={{ marginRight: '12px' }}
+          to={packageDeploymentsRef()}
+          color="primary"
+          variant="contained"
+        >
+          Manage packages across clusters
+        </Button>
+        <Button to={topologiesRef()} color="primary" variant="contained">
+          Manage 5G Core Topologies
+        </Button>
+      </div>
 
-        return (
-          <ContentInfoCard
-            key={contentType}
-            contentType={contentType}
-            repositories={repositories}
-            packages={packageSummaries}
-          />
-        );
-      })}
-    </div>
+      <div className={classes.cards}>
+        {PackageContentSummaryOrder.map(contentType => {
+          const contentRepositories =
+            repositoriesByContentType[contentType] || [];
+          const packageSummaries = flatten(
+            contentRepositories.map(r => r.packageSummaries || []),
+          );
+          const repositories = contentRepositories.map(
+            repository => repository.repository,
+          );
+
+          return (
+            <ContentInfoCard
+              key={contentType}
+              contentType={contentType}
+              repositories={repositories}
+              packages={packageSummaries}
+            />
+          );
+        })}
+      </div>
+    </Fragment>
   );
 };

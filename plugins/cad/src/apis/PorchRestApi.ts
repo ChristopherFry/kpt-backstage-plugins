@@ -23,8 +23,10 @@ import {
 import { ConfigAsDataApi } from '.';
 import { ListApiGroups } from '../types/ApiGroup';
 import { ListConfigManagements } from '../types/ConfigManagement';
+import { CustomResourceList } from '../types/CustomResource';
 import { GetFeaturesResponse } from '../types/Features';
 import { Function } from '../types/Function';
+import { KubernetesResource } from '../types/KubernetesResource';
 import { KubernetesStatus } from '../types/KubernetesStatus';
 import { PackageRevision } from '../types/PackageRevision';
 import {
@@ -464,5 +466,59 @@ export class PorchRestAPI implements ConfigAsDataApi {
         method: 'DELETE',
       },
     );
+  }
+
+  async listClusterCustomResources<T extends KubernetesResource>(
+    apiVersion: string,
+    crName: string,
+  ): Promise<CustomResourceList<T>> {
+    const customResourcesList = await this.cadFetch(
+      `apis/${apiVersion}/${crName}`,
+    );
+
+    return customResourcesList;
+  }
+
+  async listNamespacedCustomResources<T extends KubernetesResource>(
+    apiVersion: string,
+    crName: string,
+  ): Promise<CustomResourceList<T>> {
+    const customResourcesList = await this.cadFetch(
+      `apis/${apiVersion}/namespaces/${this.namespace}/${crName}`,
+    );
+
+    return customResourcesList;
+  }
+
+  async createCustomResource<T extends KubernetesResource>(
+    apiVersion: string,
+    crName: string,
+    resource: T,
+  ): Promise<T> {
+    const updatedResource = await this.cadFetch(
+      `apis/${apiVersion}/namespaces/${this.namespace}/${crName}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(resource),
+      },
+    );
+
+    return updatedResource;
+  }
+
+  async updateCustomResource<T extends KubernetesResource>(
+    apiVersion: string,
+    crName: string,
+    resource: T,
+  ): Promise<T> {
+    const updatedResource = await this.cadFetch(
+      `apis/${apiVersion}/namespaces/${this.namespace}/${crName}/${resource.metadata.name}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(resource),
+      },
+    );
+
+    return updatedResource;
   }
 }

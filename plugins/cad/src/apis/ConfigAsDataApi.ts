@@ -17,8 +17,10 @@
 import { createApiRef } from '@backstage/core-plugin-api';
 import { ListApiGroups } from '../types/ApiGroup';
 import { ListConfigManagements } from '../types/ConfigManagement';
+import { CustomResourceList } from '../types/CustomResource';
 import { GetFeaturesResponse } from '../types/Features';
 import { Function } from '../types/Function';
+import { KubernetesResource } from '../types/KubernetesResource';
 import { PackageRevision } from '../types/PackageRevision';
 import {
   ListPackageRevisionResources,
@@ -90,6 +92,28 @@ export type ConfigAsDataApi = {
   createRootSync(sync: RootSync): Promise<RootSync>;
 
   deleteRootSync(name: string): Promise<void>;
+
+  listClusterCustomResources<T extends KubernetesResource>(
+    apiVersion: string,
+    crName: string,
+  ): Promise<CustomResourceList<T>>;
+
+  listNamespacedCustomResources<T extends KubernetesResource>(
+    apiVersion: string,
+    crName: string,
+  ): Promise<CustomResourceList<T>>;
+
+  createCustomResource<T extends KubernetesResource>(
+    apiVersion: string,
+    crName: string,
+    resource: T,
+  ): Promise<T>;
+
+  updateCustomResource<T extends KubernetesResource>(
+    apiVersion: string,
+    crName: string,
+    resource: T,
+  ): Promise<T>;
 };
 
 export const configAsDataApiRef = createApiRef<ConfigAsDataApi>({

@@ -39,7 +39,7 @@ RUN yarn install --frozen-lockfile --network-timeout 600000 && rm -rf "$(yarn ca
 
 COPY . .
 
-RUN yarn tsc
+RUN yarn tsc | true
 RUN yarn --cwd packages/backend build
 
 
